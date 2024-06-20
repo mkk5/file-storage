@@ -1,0 +1,6 @@
+.venv
+.idea
+__pycache__
+*.lock
+files/*
+!files/.gitkeep

@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "files-storage"
+version = "0.1.0"
+description = "Prototype of client-side encrypted file storage"
+authors = ["Denys Vasylyshyn <denys.mkk@gmail.com>"]
+repository = "https://github.com/mkk5/file-storage"
+readme = "README.md"
+license = "AGPL-3.0-only"
+package-mode = false
+
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.111.0"
+uvicorn = "^0.30.1"
+python-multipart = "^0.0.9"
+pyjwt = {extras = ["crypto"], version = "^2.8.0"}
+email-validator = "^2.1.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

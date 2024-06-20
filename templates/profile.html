@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% set active_page = "/profile" -%}
+
+{% block content %}
+    {% include "navbar.html" %}
+    <div class="d-flex flex-column flex-md-row p-4 gap-4 py-md-5 align-items-center justify-content-center">
+        <hanko-profile/>
+    </div>
+{% endblock %}

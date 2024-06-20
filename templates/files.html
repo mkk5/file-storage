@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% set active_page = "/files" -%}
+
+{% block content %}
+    {% include "navbar.html" %}
+
+    <div class="d-flex flex-column flex-md-row p-4 gap-4 py-md-5 align-items-center justify-content-center">
+        <div>
+            <input class="form-control" type="file" id="file">
+            <button class="btn btn-primary" id="upload" onclick="uploadFunc()">Upload</button>
+        </div>
+        <div>
+            <input type="text" class="form-control" placeholder="Secret phrase" id="key" required>
+        </div>
+        <div class="list-group">
+            {% for file in files %}
+                <div class="list-group-item list-group-item-action d-flex gap-3 py-3">
+                    <div class="d-flex gap-2 w-100 justify-content-between">
+                        <h6 class="mb-0">{{ file }}</h6>
+                        <div>
+                            <button name="{{ file }}" class="btn btn-primary" onclick="downloadFunc(this)">
+                                Download <!--Download button-->
+                            </button>
+                            <button name="{{ file }}" class="btn btn-primary" onclick="deleteFunc(this)">
+                                Delete <!--Delete button-->
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script type="module">
+        const crypto = window.crypto.subtle
+        const keyField = document.getElementById("key");
+        const fileField = document.getElementById("file");
+
+        async function getKeyAndIV(text) {
+            const keyBytes = new TextEncoder().encode(text)
+            const keyHash = await crypto.digest("SHA-256", keyBytes)
+            const key = await crypto.importKey("raw", keyHash, "AES-GCM", false, ["encrypt", "decrypt"])
+            return {
+                "key": key,
+                "iv": keyHash.slice(0, 16)
+            }
+        }
+
+        async function encrypt(data, text) {
+            const keyAndIV = await getKeyAndIV(text);
+            return await crypto.encrypt(
+                {name: "AES-GCM", iv: keyAndIV.iv},
+                keyAndIV.key,
+                data
+            )
+        }
+
+        async function decrypt(data, text) {
+            const keyAndIV = await getKeyAndIV(text);
+            return await crypto.decrypt(
+                {name: "AES-GCM", iv: keyAndIV.iv},
+                keyAndIV.key,
+                data
+            )
+        }
+
+        async function uploadFunc() {
+            const file = fileField.files[0]
+            const encryptedData = await encrypt(await file.arrayBuffer(), keyField.value)
+            const formData = new FormData();
+            formData.append("file", new File([encryptedData], file.name))
+            await fetch("api/file", {
+                    method: "POST",
+                    body: formData
+                }
+            )
+            location.reload()
+        }
+
+        async function downloadFunc(element) {
+            const filename = element.getAttribute("name")
+            const res = await fetch("api/file/"+filename, {method: "GET"})
+            try {
+                const decryptedData = await decrypt(await res.arrayBuffer(), keyField.value)
+                const decryptedFile = URL.createObjectURL(new File([decryptedData], filename));
+                let a = document.createElement("a")
+                a.href = decryptedFile
+                a.download = filename
+                a.click()
+            } catch (e) {
+                alert("Invalid passphrase!")
+            }
+        }
+
+        async function deleteFunc(element) {
+            const filename = element.getAttribute("name")
+            const sure = confirm("Are you sure you want to delete " + filename + "?")
+            if (sure) {
+                await fetch("api/file/"+filename, {method: "DELETE"})
+                location.reload()
+            }
+        }
+
+        window.uploadFunc = uploadFunc
+        window.downloadFunc = downloadFunc
+        window.deleteFunc = deleteFunc
+    </script>
+{% endblock %}
