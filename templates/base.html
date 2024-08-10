@@ -16,7 +16,7 @@
 
         const {hanko} = await register("https://example.hanko.io");
 
-        hanko.onAuthFlowCompleted(() => {
+        hanko.onSessionCreated(() => {
             document.location.href = "/files";
         });
 
